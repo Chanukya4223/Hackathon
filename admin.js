@@ -7,46 +7,60 @@ if (!currentUser || currentUser.role !== "admin") {
 
 }
 
-let products =
-    JSON.parse(localStorage.getItem("products")) || [
+const DEFAULT_PRODUCTS = [
+    { id: 1, name: "Dell Inspiron 15 Laptop", brand: "Dell", category: "Electronics", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80", price: 54990, amazonPrice: 56990, flipkartPrice: 55999, meeshoPrice: 57999, quantity: 10, supplier: "Dell Suppliers" },
+    { id: 2, name: "Logitech G213 Gaming Keyboard", brand: "Logitech", category: "Accessories", image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80", price: 4499, amazonPrice: 4299, flipkartPrice: 4399, meeshoPrice: 4599, quantity: 25, supplier: "Tech World" },
+    { id: 3, name: "Logitech MX Master 3S Mouse", brand: "Logitech", category: "Accessories", image: "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=800&q=80", price: 9999, amazonPrice: 10499, flipkartPrice: 9899, meeshoPrice: 10999, quantity: 30, supplier: "Tech World" },
+    { id: 4, name: "Dell UltraSharp 24\" Monitor", brand: "Dell", category: "Electronics", image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80", price: 18999, amazonPrice: 19499, flipkartPrice: 19999, meeshoPrice: 18499, quantity: 8, supplier: "Display Hub" },
+    { id: 5, name: "Sony WH-1000XM5 Headphones", brand: "Sony", category: "Accessories", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80", price: 27990, amazonPrice: 26990, flipkartPrice: 28499, meeshoPrice: 28999, quantity: 15, supplier: "Audio World" },
+    { id: 6, name: "Logitech C920 HD Pro Webcam", brand: "Logitech", category: "Electronics", image: "https://images-cdn.ubuy.co.in/635125dd0f248c4416034d5c-logitech-c920-hd-pro-webcam-1080p.jpg", price: 6999, amazonPrice: 7299, flipkartPrice: 6899, meeshoPrice: 7499, quantity: 12, supplier: "Tech World" },
+    { id: 7, name: "Samsung T7 1TB Portable SSD", brand: "Samsung", category: "Electronics", image: "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80", price: 8999, amazonPrice: 9299, flipkartPrice: 9499, meeshoPrice: 8799, quantity: 18, supplier: "Storage Hub" },
+    { id: 8, name: "HP LaserJet Pro Wireless Printer", brand: "HP", category: "Electronics", image: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=800&q=80", price: 24999, amazonPrice: 25999, flipkartPrice: 24499, meeshoPrice: 26999, quantity: 7, supplier: "HP Enterprise" }
+];
 
-        {
-            id: 1,
-            name: "Laptop",
-            category: "Electronics",
-            price: 55000,
-            quantity: 10,
-            supplier: "Dell Suppliers"
-        },
+let products = JSON.parse(localStorage.getItem("products")) || DEFAULT_PRODUCTS;
 
-        {
-            id: 2,
-            name: "Keyboard",
-            category: "Accessories",
-            price: 1200,
-            quantity: 25,
-            supplier: "Tech World"
-        },
+// Upgrade the original four-item demo catalog while retaining stock counts.
+if (localStorage.getItem("catalogRefreshV1") !== "done") {
+products = products.map(product => {
+    const name = String(product.name || "").toLowerCase();
+    const keyword = ["laptop", "keyboard", "mouse", "monitor", "headphone", "webcam", "ssd", "printer"]
+        .find(word => name.includes(word));
+    const canonical = DEFAULT_PRODUCTS.find(item =>
+        item.name.toLowerCase() === name ||
+        (keyword && item.name.toLowerCase().includes(keyword)) ||
+        (Number(item.id) === Number(product.id) && (!name || ["laptop", "keyboard", "mouse", "monitor"].includes(name)))
+    );
+    if (!canonical) return product;
+    return {
+        ...product,
+        name: ["laptop", "keyboard", "mouse", "monitor"].includes(name) ? canonical.name : product.name,
+        brand: product.brand || canonical.brand,
+        category: product.category || canonical.category,
+        image: canonical.image,
+        price: canonical.price,
+        amazonPrice: canonical.amazonPrice,
+        flipkartPrice: canonical.flipkartPrice,
+        meeshoPrice: canonical.meeshoPrice
+    };
+});
+localStorage.setItem("products", JSON.stringify(products));
+localStorage.setItem("catalogRefreshV1", "done");
+}
 
-        {
-            id: 3,
-            name: "Mouse",
-            category: "Accessories",
-            price: 700,
-            quantity: 30,
-            supplier: "Tech World"
-        },
-
-        {
-            id: 4,
-            name: "Monitor",
-            category: "Electronics",
-            price: 15000,
-            quantity: 8,
-            supplier: "Display Hub"
+if (localStorage.getItem("catalogRefreshV2") !== "done") {
+    products.forEach(product => {
+        if (String(product.name || "").toLowerCase().includes("webcam")) {
+            product.image = DEFAULT_PRODUCTS[5].image;
         }
-
-    ];
+    });
+    const existingIds = new Set(products.map(product => String(product.id)));
+    DEFAULT_PRODUCTS.forEach(product => {
+        if (!existingIds.has(String(product.id))) products.push({ ...product });
+    });
+    localStorage.setItem("products", JSON.stringify(products));
+    localStorage.setItem("catalogRefreshV2", "done");
+}
 
 
 let suppliers =
@@ -817,7 +831,7 @@ document.addEventListener(
             "welcomeAdmin"
         ).textContent =
             "Welcome, " +
-            currentUser.name;
+            (currentUser.name || currentUser.username);
 
         document.getElementById(
             "adminName"
