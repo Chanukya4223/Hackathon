@@ -7,6 +7,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  base: "/hackathon_review/",
   build: {
     rollupOptions: {
       input: {
